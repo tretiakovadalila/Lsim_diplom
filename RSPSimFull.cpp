@@ -59,8 +59,12 @@ int CFAR_n=32;
 int CFAR_m=14;
 double CFAR_thrlev=24.;
 
-vector<vector<vector<float>>> rsp_matrix_noise_re;
-vector<vector<vector<float>>> rsp_matrix_noise_im;
+// vector<vector<vector<float>>> rsp_matrix_noise_re;
+// vector<vector<vector<float>>> rsp_matrix_noise_im;
+
+static float rsp_matrix_noise_re[QUANTITY_DWELL][NDF_MAX][NRG_MAXALL];
+static float rsp_matrix_noise_im[QUANTITY_DWELL][NDF_MAX][NRG_MAXALL];
+
 
 #ifdef DBF_ON
 static double re_dbf[NEL_MAX*NROWS_MAX], im_dbf[NEL_MAX*NROWS_MAX];
@@ -110,8 +114,11 @@ vector<float> cnr1_im;
 vector<vector<float>> rain_signal_re;
 vector<vector<float>> rain_signal_im;
 
-vector<vector<float>> reciever_noise_re;
-vector<vector<float>> reciever_noise_im;
+static float reciever_noise_re[NROWS_MAX][NPULSES_MAX][NRG_MAXALL];
+static float reciever_noise_im[NROWS_MAX][NPULSES_MAX][NRG_MAXALL];
+
+static float reciever_noise_re_beam[NPULSES_MAX][NRG_MAXALL];
+static float reciever_noise_im_beam[NPULSES_MAX][NRG_MAXALL];
 
 vector<vector<float>> init_noise_re;
 vector<vector<float>> init_noise_im;
@@ -187,11 +194,14 @@ int FindElevationAngle(
 void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type* pClutSimPar,
                     TerMap_type *pTerMap, double i_angle, double i_freq){
 
-    rsp_matrix_noise_re.clear();
-    rsp_matrix_noise_im.clear();
+    // rsp_matrix_noise_re.clear();
+    // rsp_matrix_noise_im.clear();
 
     cnr1_re.clear();
     cnr1_im.clear();
+
+    init_noise_re.clear();
+    init_noise_im.clear();
 
     FREF = i_freq;
 
@@ -798,19 +808,33 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
                 rsp_matrix_noise[i0][][i1]=(float)qrnr();// 28.07.2010    /sqrt(2.*pRadarPar->nrows);
         }
 #endif
-        reciever_noise_re.resize(n_pulses0);
-        reciever_noise_im.resize(n_pulses0);
+        // reciever_noise_re.resize(n_pulses0);
+        // reciever_noise_im.resize(n_pulses0);
 
-        // Для каждой строки изменяем размер внутреннего вектора
-        for (int ipulse = 0; ipulse < n_pulses0; ipulse++) {
-            reciever_noise_re[ipulse].resize(pHead_nrg);
-            reciever_noise_im[ipulse].resize(pHead_nrg);
+        for (int irow=0; irow<pRadarPar->nrows; irow++){
+            for(int ipulse=0;ipulse<n_pulses0;ipulse++){
+                for(int irange=0;irange<pHead_nrg;irange++){
+                    reciever_noise_re[irow][ipulse][irange]=(float)qrnr()/(float)sqrt(2.*pRadarPar->nrows);
+                    reciever_noise_im[irow][ipulse][irange]=(float)qrnr()/(float)sqrt(2.*pRadarPar->nrows);
+                }
+            }
         }
+
+        //---- DBF of reciever noise -----
 
         for(int ipulse=0;ipulse<n_pulses0;ipulse++){
             for(int irange=0;irange<pHead_nrg;irange++){
-                reciever_noise_re[ipulse][irange]=(float)qrnr();
-                reciever_noise_im[ipulse][irange]=(float)qrnr();
+                reciever_noise_re_beam[ipulse][irange]=0.;
+                reciever_noise_im_beam[ipulse][irange]=0.;
+
+                for(int irow=0;irow<(pRadarPar->nrows);irow++){
+                    double fi0=((2*PI)/lambda)*irow*pRadarPar->drows*sin((i_angle * D_TO_R) - pRadarPar->eltilt);
+
+                    reciever_noise_re_beam[ipulse][irange]+=(float)(reciever_noise_re[irow][ipulse][irange]*cos(fi0)-
+                                                                       reciever_noise_im[irow][ipulse][irange]*sin(fi0));
+                    reciever_noise_im_beam[ipulse][irange]+=(float)(reciever_noise_re[irow][ipulse][irange]*sin(fi0)+
+                                                                       reciever_noise_im[irow][ipulse][irange]*cos(fi0));
+                }
             }
         }
 
@@ -826,9 +850,9 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
                 init_noise_im[ipulse].resize(pHead_nrg);
 
                 for(int irange=0;irange<pHead_nrg;irange++){
-                    init_noise_re[ipulse][irange]=reciever_noise_re[ipulse][irange]+
+                    init_noise_re[ipulse][irange]=reciever_noise_re_beam[ipulse][irange]+
                                                     rain_signal_re[ipulse][irange];
-                    init_noise_im[ipulse][irange]=reciever_noise_im[ipulse][irange]+
+                    init_noise_im[ipulse][irange]=reciever_noise_im_beam[ipulse][irange]+
                                                     rain_signal_im[ipulse][irange];
                 }
             }
@@ -843,8 +867,8 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
                 init_noise_im[ipulse].resize(pHead_nrg);
 
                 for(int irange=0;irange<pHead_nrg;irange++){
-                    init_noise_re[ipulse][irange]=reciever_noise_re[ipulse][irange];
-                    init_noise_im[ipulse][irange]=reciever_noise_im[ipulse][irange];
+                    init_noise_re[ipulse][irange]=reciever_noise_re_beam[ipulse][irange];
+                    init_noise_im[ipulse][irange]=reciever_noise_im_beam[ipulse][irange];
                 }
             }
         }
@@ -857,13 +881,15 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
             out0 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * pRadarPar->ndf[idwell]);
             p0 = fftw_plan_dft_1d(pRadarPar->ndf[idwell], in0, out0, FFTW_FORWARD, FFTW_ESTIMATE);
 
-            vector<vector<float>> rsp_dwell_re; vector<vector<float>> rsp_dwell_im;
+            // vector<vector<float>> rsp_dwell_re; vector<vector<float>> rsp_dwell_im;
 
             for(int irange=0;irange<pHead_nrg;irange++){
                 if (irange == 0) {
+                    // rsp_dwell_re.clear();
+                    // rsp_dwell_im.clear();
                     for (int ivelocity = 0; ivelocity < pRadarPar->ndf[idwell]; ++ivelocity) {
-                        rsp_dwell_re.push_back(vector<float>());
-                        rsp_dwell_im.push_back(vector<float>());
+                        // rsp_dwell_re.push_back(vector<float>());
+                        // rsp_dwell_im.push_back(vector<float>());
                     }
                 }
                 int ipulse;
@@ -905,23 +931,24 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
                         in0[ipulse][1]=in0[ipulse][1]*weight_FFT[idwell][ipulse];
                     }
 
-                    int in_size = sizeof(in0[ipulse]);
-
                     fftw_execute(p0);
 
                     for(int ivelocity=0;ivelocity<pRadarPar->ndf[idwell];ivelocity++){
-                        float rsp_re = (float)out0[ivelocity][0];
-                        float rsp_im = (float)out0[ivelocity][1];
-                        rsp_dwell_re[ivelocity].push_back(rsp_re);
-                        rsp_dwell_im[ivelocity].push_back(rsp_im);
+                        // float rsp_re = (float)out0[ivelocity][0];
+                        // float rsp_im = (float)out0[ivelocity][1];
+                        // rsp_dwell_re[ivelocity].push_back(rsp_re);
+                        // rsp_dwell_im[ivelocity].push_back(rsp_im);
+
+                        rsp_matrix_noise_re[idwell][ivelocity][irange]=(float)out0[ivelocity][0];
+                        rsp_matrix_noise_im[idwell][ivelocity][irange]=(float)out0[ivelocity][1];
+
                     }
 
-                    int out_size = sizeof(out0);
                 }
             }
 
-            rsp_matrix_noise_re.push_back(rsp_dwell_re);
-            rsp_matrix_noise_im.push_back(rsp_dwell_im);
+            // rsp_matrix_noise_re.push_back(rsp_dwell_re);
+            // rsp_matrix_noise_im.push_back(rsp_dwell_im);
 
             fftw_destroy_plan(p0);
             fftw_free(in0); fftw_free(out0);
