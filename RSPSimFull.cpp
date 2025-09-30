@@ -59,41 +59,30 @@ int CFAR_n=32;
 int CFAR_m=14;
 double CFAR_thrlev=24.;
 
-// vector<vector<vector<float>>> rsp_matrix_noise_re;
-// vector<vector<vector<float>>> rsp_matrix_noise_im;
-
-static float rsp_matrix_noise_re[QUANTITY_DWELL][NDF_MAX][NRG_MAXALL];
-static float rsp_matrix_noise_im[QUANTITY_DWELL][NDF_MAX][NRG_MAXALL];
-
+vector<vector<vector<float>>> rsp_matrix_noise_re;
+vector<vector<vector<float>>> rsp_matrix_noise_im;
 
 #ifdef DBF_ON
 static double re_dbf[NEL_MAX*NROWS_MAX], im_dbf[NEL_MAX*NROWS_MAX];
 #endif
 
-double  FREF = 3000000.; // Reference frequency in Hz
-double  CLC		= 1./FREF; // LSB of PRI and Range in sec
-double  RG_STEP	= 0.5*C_LIGHT*CLC;			// range gate step in m
 
-// double MAX_DISTANCE=(int)(100.e3/RG_STEP);
+double  FREF = 10000.;
+double  CLC;
+double  RG_STEP;
 
-//double tblank_sec = TPULSE_SEC[0]+TB_CLK[0]/FREF;//tpulse_sec+TB_CLK[0]/FREF (total blank = tpulse+blank after end of transmit pulse)
+double MAX_DISTANCE;
 
-int    TPULSE_CLK[]	= {int(FREF*TPULSE_SEC[0]), int(FREF*TPULSE_SEC[1]), int(FREF*TPULSE_SEC[2]), int(FREF*TPULSE_SEC[3]),
-                         int(FREF*TPULSE_SEC[4]), int(FREF*TPULSE_SEC[5]), int(FREF*TPULSE_SEC[6]), int(FREF*TPULSE_SEC[7]), int(FREF*TPULSE_SEC[8])};
+int    TPULSE_CLK[9];
+int	 TBLANK_CLK[9];
+int	 PRI_SET[9];
 
-int	 TBLANK_CLK[]	= {TPULSE_CLK[0]+TB_CLK[0], TPULSE_CLK[1]+TB_CLK[1], TPULSE_CLK[2]+TB_CLK[2], TPULSE_CLK[3]+TB_CLK[3],
-                          TPULSE_CLK[4]+TB_CLK[4], TPULSE_CLK[5]+TB_CLK[5], TPULSE_CLK[6]+TB_CLK[6], TPULSE_CLK[7]+TB_CLK[7], TPULSE_CLK[8]+TB_CLK[8]};
+int	 pri_set[9];
+int pri;
 
-int	 PRI_SET[]		= {int(240e-6*FREF),int(276e-6*FREF),int(316e-6*FREF),int(350e-6*FREF),
-                      int(3133.33e-6*FREF),int(3133.33e-6*FREF),int(500e-6*FREF),int(550e-6*FREF),int(600e-6*FREF)};
+double tpulse_sec[9];
+int    tpulse_clk[9];
 
-int	 pri_set[9] = {PRI_SET[0],PRI_SET[1],PRI_SET[2],PRI_SET[3],PRI_SET[4],PRI_SET[5],PRI_SET[6],PRI_SET[7],PRI_SET[8]};		//in CLK
-int pri = PRI_SET[0];		// current pulse repetition interval in CLK
-
-double tpulse_sec[9] = {int(FREF*TPULSE_SEC[0]), int(FREF*TPULSE_SEC[1]), int(FREF*TPULSE_SEC[2]), int(FREF*TPULSE_SEC[3]), int(FREF*TPULSE_SEC[4]), int(FREF*TPULSE_SEC[5]), int(FREF*TPULSE_SEC[6]),int(FREF*TPULSE_SEC[7]), int(FREF*TPULSE_SEC[8])};
-int    tpulse_clk[9] = {TPULSE_SEC[0]+TB_CLK[0]/FREF, TPULSE_SEC[1]+TB_CLK[1]/FREF, TPULSE_SEC[2]+TB_CLK[2]/FREF, TPULSE_SEC[3]+TB_CLK[3]/FREF,TPULSE_SEC[4]+TB_CLK[4]/FREF, TPULSE_SEC[5]+TB_CLK[5]/FREF, TPULSE_SEC[6]+TB_CLK[6]/FREF, TPULSE_SEC[7]+TB_CLK[7]/FREF, TPULSE_SEC[8]+TB_CLK[8]/FREF};
-
-//double tblank_sec[9] = {TPULSE_CLK[0]+TB_CLK[0], TPULSE_CLK[1]+TB_CLK[1], TPULSE_CLK[2]+TB_CLK[2], TPULSE_CLK[3]+TB_CLK[3],TPULSE_CLK[4]+TB_CLK[4], TPULSE_CLK[5]+TB_CLK[5], TPULSE_CLK[6]+TB_CLK[6],TPULSE_CLK[7]+TB_CLK[7], TPULSE_CLK[8]+TB_CLK[8]};
 
 static __declspec (align(16))  float refsignal_re[QUANTITY_DWELL*MAX_NSIGNAL];
 static __declspec (align(16))  float refsignal_im[QUANTITY_DWELL*MAX_NSIGNAL];
@@ -192,18 +181,16 @@ int FindElevationAngle(
 }
 
 void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type* pClutSimPar,
-                    TerMap_type *pTerMap, double i_angle, double i_freq){
+                    TerMap_type *pTerMap, double i_angle){
 
-    // rsp_matrix_noise_re.clear();
-    // rsp_matrix_noise_im.clear();
+    rsp_matrix_noise_re.clear();
+    rsp_matrix_noise_im.clear();
 
     cnr1_re.clear();
     cnr1_im.clear();
 
     init_noise_re.clear();
     init_noise_im.clear();
-
-    FREF = i_freq;
 
     lambda=C_LIGHT/pHead->txf;
 
@@ -536,8 +523,6 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
             double hant0=(R_EFF+ pRadarPar->hant + pTerMap->tile[0].height);
             double hant0_2=hant0*hant0;
 
-            double MAX_DISTANCE=(int)(100.e3/RG_STEP);
-
             for(int idistance=0; idistance<MAX_DISTANCE; idistance++){
 
                 double range_cur=(idistance+1)*RG_STEP;
@@ -565,7 +550,7 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
                 if(raint_presense){
                     double rcs=(PI/4.)*eta*RG_STEP*(range_cur*pRadarPar->beam_elwidth)*(range_cur*AZWIDTH);
 
-                    double cnr0=(sPot*tpulse_sec[idwell]*rcs)/pow(range_cur,4);
+                    double cnr0=(sPot*pRadarPar->tpulse_sec[idwell]*rcs)/pow(range_cur,4);
 
 //----------------
 #if 0
@@ -881,15 +866,15 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
             out0 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * pRadarPar->ndf[idwell]);
             p0 = fftw_plan_dft_1d(pRadarPar->ndf[idwell], in0, out0, FFTW_FORWARD, FFTW_ESTIMATE);
 
-            // vector<vector<float>> rsp_dwell_re; vector<vector<float>> rsp_dwell_im;
+            vector<vector<float>> rsp_dwell_re; vector<vector<float>> rsp_dwell_im;
 
             for(int irange=0;irange<pHead_nrg;irange++){
                 if (irange == 0) {
-                    // rsp_dwell_re.clear();
-                    // rsp_dwell_im.clear();
+                    rsp_dwell_re.clear();
+                    rsp_dwell_im.clear();
                     for (int ivelocity = 0; ivelocity < pRadarPar->ndf[idwell]; ++ivelocity) {
-                        // rsp_dwell_re.push_back(vector<float>());
-                        // rsp_dwell_im.push_back(vector<float>());
+                        rsp_dwell_re.push_back(vector<float>());
+                        rsp_dwell_im.push_back(vector<float>());
                     }
                 }
                 int ipulse;
@@ -934,21 +919,21 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
                     fftw_execute(p0);
 
                     for(int ivelocity=0;ivelocity<pRadarPar->ndf[idwell];ivelocity++){
-                        // float rsp_re = (float)out0[ivelocity][0];
-                        // float rsp_im = (float)out0[ivelocity][1];
-                        // rsp_dwell_re[ivelocity].push_back(rsp_re);
-                        // rsp_dwell_im[ivelocity].push_back(rsp_im);
+                        float rsp_re = (float)out0[ivelocity][0];
+                        float rsp_im = (float)out0[ivelocity][1];
+                        rsp_dwell_re[ivelocity].push_back(rsp_re);
+                        rsp_dwell_im[ivelocity].push_back(rsp_im);
 
-                        rsp_matrix_noise_re[idwell][ivelocity][irange]=(float)out0[ivelocity][0];
-                        rsp_matrix_noise_im[idwell][ivelocity][irange]=(float)out0[ivelocity][1];
+                        //rsp_matrix_noise_re[idwell][ivelocity][irange]=(float)out0[ivelocity][0];
+                        //rsp_matrix_noise_im[idwell][ivelocity][irange]=(float)out0[ivelocity][1];
 
                     }
 
                 }
             }
 
-            // rsp_matrix_noise_re.push_back(rsp_dwell_re);
-            // rsp_matrix_noise_im.push_back(rsp_dwell_im);
+            rsp_matrix_noise_re.push_back(rsp_dwell_re);
+            rsp_matrix_noise_im.push_back(rsp_dwell_im);
 
             fftw_destroy_plan(p0);
             fftw_free(in0); fftw_free(out0);
@@ -958,10 +943,43 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
     prDialog.setValue(100);
 }
 
+void RSPSimFull::frequency_control(double i_freq) {
+
+    FREF = i_freq * 1000000.; // Reference frequency in Hz
+    CLC		= 1./FREF; // LSB of PRI and Range in sec
+    RG_STEP	= 0.5*C_LIGHT*CLC;			// range gate step in m
+
+    MAX_DISTANCE = (int)(100.e3/RG_STEP);
+
+    for (int i = 0; i <= 8; i++) {
+    TPULSE_CLK[i]	= int(FREF*TPULSE_SEC[i]);
+
+    TBLANK_CLK[i]	= TPULSE_CLK[i]+TB_CLK[i];
+
+    pri_set[i] = PRI_SET[i];		//in CLK
+
+    tpulse_sec[i] = int(FREF*TPULSE_SEC[i]);
+    tpulse_clk[i] = TPULSE_SEC[i]+TB_CLK[i]/FREF;
+    }
+
+    PRI_SET[0]	= int(240e-6*FREF);
+    PRI_SET[1]	= int(276e-6*FREF);
+    PRI_SET[2]	= int(316e-6*FREF);
+    PRI_SET[3]	= int(350e-6*FREF);
+    PRI_SET[4]	= int(3133.33e-6*FREF);
+    PRI_SET[5]	= int(3133.33e-6*FREF);
+    PRI_SET[6]	= int(500e-6*FREF);
+    PRI_SET[7]	= int(550e-6*FREF);
+    PRI_SET[8]	= int(600e-6*FREF);
+
+    pri = PRI_SET[0];		// current pulse repetition interval in CLK
+
+    }
 
 void* RSPSimFull::RspSFI(ClutSimPar_type* pClutSimPar, double i_angle, double i_freq) {
+    frequency_control(i_freq);
     RadarParInit(&gRadarPar, 1);
-    RspSimFullInit(&gHead, &gRadarPar, pClutSimPar, &gTerMap, i_angle, i_freq);
+    RspSimFullInit(&gHead, &gRadarPar, pClutSimPar, &gTerMap, i_angle);
 }
 
 vector<double>* RSPSimFull::get_to_ADC_1d(int idwell, int ivelocity) {
