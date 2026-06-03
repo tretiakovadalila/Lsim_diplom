@@ -44,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
     axisX->setTickCount(12); axisY->setTickCount(5);
 
     //axisX->setTitleText(QString::fromLocal8Bit("Время"));    axisY->setTitleText(QString::fromLocal8Bit("Амплитуда"));
-    axisX->setTitleText("Время");    axisY->setTitleText("Амплитуда");
+    axisX->setTitleText("Дальность");axisY->setTitleText("Амплитуда");
 
     chart_1d->addAxis(axisX, Qt::AlignBottom);    chart_1d->addAxis(axisY, Qt::AlignLeft);
     series_1d->attachAxis(axisX);    series_1d->attachAxis(axisY);
@@ -93,10 +93,9 @@ MainWindow::MainWindow(QWidget *parent)
     GraphSpectrogram->axisY()->setLabelAutoRotation(10);
     GraphSpectrogram->axisZ()->setLabelAutoRotation(10);
 
-    GraphSpectrogram->axisX()->setTitleVisible(true);  GraphSpectrogram->axisZ()->setTitleVisible(true);
-    // GraphSpectrogram->axisX()->setTitle(QString::fromLocal8Bit("Скорость"));
-    // GraphSpectrogram->axisZ()->setTitle(QString::fromLocal8Bit("Дальность"));
+    GraphSpectrogram->axisX()->setTitleVisible(true);  GraphSpectrogram->axisZ()->setTitleVisible(true); GraphSpectrogram->axisY()->setTitleVisible(true);
     GraphSpectrogram->axisX()->setTitle("Скорость");
+    GraphSpectrogram->axisY()->setTitle("Амплитуда");
     GraphSpectrogram->axisZ()->setTitle("Дальность");
     GraphSpectrogram->axisZ()->setReversed(true);
 
@@ -124,8 +123,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->Rain_Hmax_2->setText(QString::number(gClutSimPar.rain_hmax));
 
     ui->Raint_Presense_2->setChecked(true);
-    ui->Dwell_2->setMinimum(1);
-    ui->Dwell_2->setMaximum(QUANTITY_DWELL);
+    //ui->Dwell_2->setMinimum(1);
+    //ui->Dwell_2->setMaximum(QUANTITY_DWELL);
     QIntValidator *validator = new QIntValidator(-10, 80, this);
     ui->Beam_2->setValidator(validator);
     ui->Beam_2->setText("0");

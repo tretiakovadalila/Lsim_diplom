@@ -66,8 +66,9 @@ vector<vector<vector<float>>> rsp_matrix_noise_im;
 static double re_dbf[NEL_MAX*NROWS_MAX], im_dbf[NEL_MAX*NROWS_MAX];
 #endif
 
+double MAX_DISTANCE = (int)(100.e3/RG_STEP);
 
-double  FREF = 10000.;
+/*double  FREF = 10000.;
 double  CLC;
 double  RG_STEP;
 
@@ -81,7 +82,7 @@ int	 pri_set[9];
 int pri;
 
 double tpulse_sec[9];
-int    tpulse_clk[9];
+int    tpulse_clk[9];*/
 
 
 static __declspec (align(16))  float refsignal_re[QUANTITY_DWELL*MAX_NSIGNAL];
@@ -215,7 +216,7 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
         float *amp_signal=refsignal_amp+idwell*MAX_NSIGNAL;
         float *fi_signal=refsignal_fi+idwell*MAX_NSIGNAL;
 
-        int Nsignal0=tpulse_clk[idwell];
+        int Nsignal0=pRadarPar->tpulse_clk[idwell];
         double Timpulse=Nsignal0*CLC;
 
         switch(type_signal[idwell]){
@@ -494,7 +495,7 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
         int n_pulses0=pRadarPar->npulses[idwell]-pRadarPar->nfill_pulses[idwell];
         int pHead_nrg=PRI_SET[idwell]-TBLANK_CLK[idwell];
 
-        PRI=pri_set[idwell]*CLC;
+        PRI=pRadarPar->pri_set[idwell]*CLC;
         double PRF=1./PRI;
 
         //---------- Rain clutter init -----
@@ -713,8 +714,8 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
             int idistance;
             for(idistance=0;idistance<MAX_DISTANCE; idistance++){	signal_in[idistance][0]=0.;		signal_in[idistance][1]=0.;	}
 
-            for(idistance=0; idistance<tpulse_clk[idwell]; idistance++){
-                int idis0=idistance-tpulse_clk[idwell]/2;
+            for(idistance=0; idistance<pRadarPar->tpulse_clk[idwell]; idistance++){
+                int idis0=idistance-pRadarPar->tpulse_clk[idwell]/2;
                 if(idis0<0) idis0+=MAX_DISTANCE;
 
                 signal_in[idis0][0]=(float)(amp_signal[idistance]*cos(fi_signal[idistance]));
@@ -943,7 +944,7 @@ void RspSimFullInit(Head_type* pHead, RadarPar_type* pRadarPar,	ClutSimPar_type*
     prDialog.setValue(100);
 }
 
-void RSPSimFull::frequency_control(double i_freq) {
+/*void RSPSimFull::frequency_control(double i_freq) {
 
     FREF = i_freq * 1000000.; // Reference frequency in Hz
     CLC		= 1./FREF; // LSB of PRI and Range in sec
@@ -974,10 +975,10 @@ void RSPSimFull::frequency_control(double i_freq) {
 
     pri = PRI_SET[0];		// current pulse repetition interval in CLK
 
-    }
+    }*/
 
 void* RSPSimFull::RspSFI(ClutSimPar_type* pClutSimPar, double i_angle, double i_freq) {
-    frequency_control(i_freq);
+    //frequency_control(i_freq);
     RadarParInit(&gRadarPar, 1);
     RspSimFullInit(&gHead, &gRadarPar, pClutSimPar, &gTerMap, i_angle);
 }

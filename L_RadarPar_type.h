@@ -35,9 +35,9 @@ const double  TX_FMAX	= 3.3e9;	// upper carrier frequency (Hz)
 const double  TX_F	    = (TX_FMAX+TX_FMIN)/2;	// average carrier frequency (Hz)
 const double  LAMBDAF   = C_LIGHT /TX_F;	//C_LIGHT /TX_F average wavelength 0.1034
 
-// const double  FREF		= 3000000.;					// Reference frequency in Hz     1500000.
-// const double  CLC		= 1./FREF;					// LSB of PRI and Range in sec
-// const double  RG_STEP	= 0.5*C_LIGHT*CLC;			// range gate step in m
+const double  FREF		= 3000000.;					// Reference frequency in Hz     1500000.
+const double  CLC		= 1./FREF;					// LSB of PRI and Range in sec
+const double  RG_STEP	= 0.5*C_LIGHT*CLC;			// range gate step in m
 
 // Radar
 const double PPEAK		= 8960;	    // peak transmitter power (Wt)25000
@@ -86,13 +86,13 @@ const int NDF_AR[]			= {32, 32, 32, 32,  4, 4, 8, 8, 8};	// FFT size for various
 //29.09.2010	const double TPULSE_SEC[]	= {36e-6, 41.4e-6, 47.4e-6,52.5e-6,  470e-6, 470e-6, 75.e-6};// Pulse length for various waveforms
 const double TPULSE_SEC[]	= {36e-6, 41.4e-6, 47.4e-6, 52.0e-6,  470e-6, 470e-6, 75.e-6, 75.e-6, 75.e-6};// Pulse length for various waveforms
 
-// const int    TPULSE_CLK[]	= {int(FREF*TPULSE_SEC[0]), int(FREF*TPULSE_SEC[1]), int(FREF*TPULSE_SEC[2]), int(FREF*TPULSE_SEC[3]),
-//                           int(FREF*TPULSE_SEC[4]), int(FREF*TPULSE_SEC[5]), int(FREF*TPULSE_SEC[6]), int(FREF*TPULSE_SEC[7]), int(FREF*TPULSE_SEC[8])};
+const int    TPULSE_CLK[]	= {int(FREF*TPULSE_SEC[0]), int(FREF*TPULSE_SEC[1]), int(FREF*TPULSE_SEC[2]), int(FREF*TPULSE_SEC[3]),
+                          int(FREF*TPULSE_SEC[4]), int(FREF*TPULSE_SEC[5]), int(FREF*TPULSE_SEC[6]), int(FREF*TPULSE_SEC[7]), int(FREF*TPULSE_SEC[8])};
 
 const int	 TB_CLK[]		= {2, 2, 2, 2, 2,2,2,2,2};//blank after end of transmit pulse
 
-// const int	 TBLANK_CLK[]	= {TPULSE_CLK[0]+TB_CLK[0], TPULSE_CLK[1]+TB_CLK[1], TPULSE_CLK[2]+TB_CLK[2], TPULSE_CLK[3]+TB_CLK[3],
-//                           TPULSE_CLK[4]+TB_CLK[4], TPULSE_CLK[5]+TB_CLK[5], TPULSE_CLK[6]+TB_CLK[6], TPULSE_CLK[7]+TB_CLK[7], TPULSE_CLK[8]+TB_CLK[8]};
+const int	 TBLANK_CLK[]	= {TPULSE_CLK[0]+TB_CLK[0], TPULSE_CLK[1]+TB_CLK[1], TPULSE_CLK[2]+TB_CLK[2], TPULSE_CLK[3]+TB_CLK[3],
+                          TPULSE_CLK[4]+TB_CLK[4], TPULSE_CLK[5]+TB_CLK[5], TPULSE_CLK[6]+TB_CLK[6], TPULSE_CLK[7]+TB_CLK[7], TPULSE_CLK[8]+TB_CLK[8]};
 
 const double PRIMIN[2]		= {240e-6, 45e-6};//boundary of pulse repeatition interval for various PRF mode
 const double PRIMAX[2]		= {350e-6, 53e-6};//boundary of pulse repeatition interval for various PRF mode
@@ -100,8 +100,8 @@ const double PRIMAX[2]		= {350e-6, 53e-6};//boundary of pulse repeatition interv
 const double PRFMIN[2]		= {1./PRIMAX[0], 1./PRIMAX[1]};//boundary of pulse repeatition frequency for various PRF mode
 const double PRFMAX[2]		= {1./PRIMIN[0], 1./PRIMIN[1]};
 
-// const int	 PRI_SET[]		= {int(240e-6*FREF),int(276e-6*FREF),int(316e-6*FREF),int(350e-6*FREF),
-//                        int(3133.33e-6*FREF),int(3133.33e-6*FREF),int(500e-6*FREF),int(550e-6*FREF),int(600e-6*FREF)};
+const int	 PRI_SET[]		= {int(240e-6*FREF),int(276e-6*FREF),int(316e-6*FREF),int(350e-6*FREF),
+                       int(3133.33e-6*FREF),int(3133.33e-6*FREF),int(500e-6*FREF),int(550e-6*FREF),int(600e-6*FREF)};
 
 const double FM_DEVIATION[2]	= {2500000, 2500000};	// (Hz)
 const double R_WIDTH[2]		= {1.5*0.5* C_LIGHT/FM_DEVIATION[0], 1.5*0.5* C_LIGHT/FM_DEVIATION[1]}; // compressed pulse 3 dB width in m for various PRF mode
@@ -164,14 +164,14 @@ typedef struct
     int nfill_pulses[9];	// number of fill pulses for current PRF mode
 
     double tpulse_sec[9];		// Pulse length {24e-6, 13e-6}
-    //int    tpulse_clk[9];		//TPULSE_CLK[2]	= {int(FREF*TPULSE_SEC[0]), int(FREF*TPULSE_SEC[1])};
+    int    tpulse_clk[9];		//TPULSE_CLK[2]	= {int(FREF*TPULSE_SEC[0]), int(FREF*TPULSE_SEC[1])};
 
     double primin;			//
     double primax;			//
     double prfmin;			//
     double prfmax;			//
 
-    // int	 pri_set[9];		//in CLK
+    int	 pri_set[9];		//in CLK
     double fm_deviation;	//FM_DEVIATION	= 1000000;	// (Hz)3000000
     double r_width;			//R_WIDTH		= 1.5*0.5* C_LIGHT/FM_DEVIATION; // compressed pulse 3 dB width in m
     double sll_r;			//SLL_R			= 1.0e-4;	// pulse compression side-lobe level (power coefficient)
@@ -264,7 +264,7 @@ const RadarPar_type RADARPAR =
         NFILL_PULSES_AR[0],NFILL_PULSES_AR[1],NFILL_PULSES_AR[2],NFILL_PULSES_AR[3],NFILL_PULSES_AR[4],NFILL_PULSES_AR[5],NFILL_PULSES_AR[6],NFILL_PULSES_AR[7],NFILL_PULSES_AR[8], //nfill_pulses;
 
         TPULSE_SEC[0],TPULSE_SEC[1],TPULSE_SEC[2],TPULSE_SEC[3],TPULSE_SEC[4],TPULSE_SEC[5],TPULSE_SEC[6],TPULSE_SEC[7],TPULSE_SEC[8],//TPULSE_SEC[0],		// =20e-6, (sec)
-        //int(FREF*TPULSE_SEC[0]), int(FREF*TPULSE_SEC[1]), int(FREF*TPULSE_SEC[2]), int(FREF*TPULSE_SEC[3]), int(FREF*TPULSE_SEC[4]), int(FREF*TPULSE_SEC[5]), int(FREF*TPULSE_SEC[6]),int(FREF*TPULSE_SEC[7]), int(FREF*TPULSE_SEC[8]),//TPULSE_CLK[0],		// Pulse length (clc)
+        int(FREF*TPULSE_SEC[0]), int(FREF*TPULSE_SEC[1]), int(FREF*TPULSE_SEC[2]), int(FREF*TPULSE_SEC[3]), int(FREF*TPULSE_SEC[4]), int(FREF*TPULSE_SEC[5]), int(FREF*TPULSE_SEC[6]),int(FREF*TPULSE_SEC[7]), int(FREF*TPULSE_SEC[8]),//TPULSE_CLK[0],		// Pulse length (clc)
 
         PRIMIN[0],			//primin (sec)
         PRIMAX[0],			//primax (sec)
@@ -272,7 +272,7 @@ const RadarPar_type RADARPAR =
         PRFMIN[0],			// Hz
         PRFMAX[0],			// Hz
 
-        // PRI_SET[0],PRI_SET[1],PRI_SET[2],PRI_SET[3],PRI_SET[4],PRI_SET[5],PRI_SET[6],PRI_SET[7],PRI_SET[8], // clc
+        PRI_SET[0],PRI_SET[1],PRI_SET[2],PRI_SET[3],PRI_SET[4],PRI_SET[5],PRI_SET[6],PRI_SET[7],PRI_SET[8], // clc
 
         FM_DEVIATION[0],	// =1 MHz, (Hz)
         R_WIDTH[0],			// ~ compressed pulse 3 dB width in m

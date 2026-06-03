@@ -24,7 +24,7 @@ public:
     explicit RSPSimFull(QObject *parent = nullptr);
     ~RSPSimFull();
 
-    void frequency_control(double i_freq);
+    //void frequency_control(double i_freq);
     void* RspSFI(ClutSimPar_type* pClutSimPar, double i_angle, double i_freq);
     vector<double>* get_to_ADC_1d(int idwell, int ivelocity);
     vector<vector<double>>* get_to_ADC_2d(int idwell);
